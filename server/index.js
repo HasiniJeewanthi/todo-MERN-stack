@@ -1,14 +1,24 @@
+require("dotenv").config();
 const express = require('express');
+const { connectToMongoDB } = require("./database");
 
 const app = express();
+app.use(express.json());
 
-app.get("/hello", (req, res)=>{
-    res.status(200).json({msg:"hello peoples"});
 
-});
+const router = require("./routes");
 
-const port = 5000;
-app.listen(port, () =>{
-    console.log(`Server is listening on http://localhost:${port}`);
-});
+app.use("/api", router);
+
+const port = process.env.PORT || 4000;
+
+async function startServer() {
+    await connectToMongoDB();
+    app.listen(port, () =>{
+        console.log(`Server is listening on http://localhost:${port}`);
+    });
+}
+startServer();
+
+
 
