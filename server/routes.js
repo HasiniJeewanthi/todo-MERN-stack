@@ -1,6 +1,8 @@
 const express = require ('express');
 const router = express.Router();
 const { getConnectedClient } = require("./database");
+const { objectId } = require("mongodb");
+
 
 const getCollection = () => {
     const client = getConnectedClient();
@@ -24,21 +26,45 @@ router.post("/todos", async (req, res) => {
     const collection = getCollection();
     const {todo} = req.body;
 
+    if (!todo) {
+       return res.status(400).json({msg:"Error no todo found"});
+    }
+
+    todo = JSON.stringify(todo);
+
+
     const newTodo = await collection.insertOne({todo, status:false})
 
-    res.status(201).json({ todo, status:false, _id:newTodo.insertedId});
+    res.status(201).json({ todo, status:false, _id: newTodo.insertedId });
 });
 
 // DELETE Mapping
 
-router.delete("/todos/:id", (req, res) => {
-    res.status(200).json({msg:"DELETE REQUEST TO /api/todos/:id"});
+router.delete("/todos/:id", async (req, res) => {
+    const collection = getCollection();
+    const _id = new objectId(req.params.id);
+
+    const deletedTodo = await collection.deleteOne({ _id });
+
+    res.status(200).json(deletedTodo);
 });
 
 // PUT Mapping
 
-router.put("/todos/:id", (req, res) => {
-    res.status(200).json({msg:"PUT REQUEST TO /api/todos/:id"});
+router.put("/todos/:id", async (req, res) => {
+    const collection = getCollection();
+    const _id = new objectId(req.params.id);
+    const { status } = req.body;
+
+    if (typeof status !== "boolean") {
+        return res.status(400).json({msg: "Invalid status"});
+        
+    }
+
+    const updatedTodo = await collection.updateOne({ _id }, { $set: { status: !status }});
+
+
+    res.status(200).json(updatedTodo);
 });
 
 module.exports = router;
