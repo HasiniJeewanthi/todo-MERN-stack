@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import Todo from "./Todo";
 
 
 export default function App() {
-  const [message, setMessage] = useState("")
+  const [todos, setTodos] = useState([]);
+  const [content, setContent] = useState("");
 
   useEffect(() => {
 
@@ -10,17 +12,53 @@ export default function App() {
       const res = await fetch("/api/todos");
       const todos = await res.json();
 
-      setMessage(todos.msg);
+      setTodos(todos);
 
     }
     getTodos();
  
-  }, [])
+  }, []);
+
+  const createNewTodo = async (e) => {
+    e.preventDefault();
+    if (content.length > 3) {
+      const res = await fetch("/api/todos", {
+        method: "POST",
+        body: JSON.stringify({todo: content}),
+        headers:  {
+          "Content-Type": "application/json",
+        },
+      });
+      const newTodo = await res.json();
+
+      setContent("");
+      setTodos([...todos, newTodo]);
+      
+    }
+  }
 
   return (
    <main className="container">
-    <h1>Task Manager App</h1>
-    {message && <p>{message}</p>}
+    <h1 className="title">Task Manager App</h1>
+    <form className="form" onSubmit={createNewTodo}>
+      <input 
+      type="text"
+      value={content}
+      onChange={(e) =>setContent(e.target.value)} 
+      placeholder="Enter a new todo..."
+      className="form_input"
+      required
+      />
+      <button className="form_button" type="submit">Create Todo</button>
+
+    </form>
+    <div className="todos">
+      {(todos.length > 0) && 
+      todos.map((todo) => (
+        <Todo key={todo._id} todo = {todo} setTodos={setTodos} />
+      ))
+      }
+    </div>
    </main>
   );
 }
